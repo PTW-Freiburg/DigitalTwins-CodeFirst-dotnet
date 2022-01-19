@@ -2,7 +2,7 @@
 
 using System.Reflection;
 using Telstra.Twins.Common;
-using Telstra.Twins.Helpers;
+using Telstra.Twins.Attributes;
 
 namespace Telstra.Twins.Models
 {
@@ -11,14 +11,13 @@ namespace Telstra.Twins.Models
         public static ModelComponent Create(PropertyInfo info)
         {
             var t = info.PropertyType;
-            return new ModelComponent(
-                t.Name.ToCamelCase(),
-                t.GetDigitalTwinModelId(),
-                null,
-                null,
-                null,
-                null
-            );
+            var attr = info.GetCustomAttribute<TwinComponentAttribute>();
+
+            return new ModelComponent()
+            {
+                Name = attr.Name?.ToCamelCase() ?? t.Name.ToCamelCase(),
+                Schema = t.GetDigitalTwinModelId()
+            };
         }
     }
 }
