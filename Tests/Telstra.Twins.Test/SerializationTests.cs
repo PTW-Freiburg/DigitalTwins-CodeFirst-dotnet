@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using FluentAssertions;
 using KellermanSoftware.CompareNetObjects;
 using Telstra.Twins.Core;
 using Telstra.Twins.Helpers;
@@ -75,6 +76,23 @@ namespace Telstra.Twins.Test
         {
             var deserializedObject = Serializer.DeserializeTwin(twinDTDL);
             deserializedObject.ShouldCompare(twinObject);
+        }
+
+
+        [Fact]
+        public void ToBasicTwin_SimpleTwin_Should_Work()
+        {
+            var basicTwin = DataGenerator.simpleTwin.ToBasicTwin();
+
+            basicTwin.Contents.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void ToBasicTwin_TwinWithAllAttributes_Should_Work()
+        {
+            var basicTwin = DataGenerator.twinWithAllAttributes.ToBasicTwin();
+
+            basicTwin.Contents.Count.Should().Be(6);
         }
 
         public static IEnumerable<object[]> ModelTestData()

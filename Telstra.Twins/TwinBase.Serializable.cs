@@ -190,8 +190,6 @@ namespace Telstra.Twins
                 Metadata = new DigitalTwinMetadata()
                 {
                     ModelId = ModelId,
-                    PropertyMetadata = properties.Select(p => (key: p.Name, value: new DigitalTwinPropertyMetadata() { LastUpdatedOn = DateTimeOffset.UtcNow }))
-                        .ToDictionary(c => c.key, c => c.value)
                 },
                 Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
                     .ToDictionary(c => c.key,
@@ -208,8 +206,6 @@ namespace Telstra.Twins
 
             var basicTwinComponent = new BasicDigitalTwinComponent()
             {
-                Metadata = properties.Select(p => (key: p.Name, value: new DigitalTwinPropertyMetadata() { LastUpdatedOn = DateTimeOffset.UtcNow }))
-                        .ToDictionary(c => c.key, c => c.value),
                 Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
                     .ToDictionary(c => c.key,
                         c => c.value is TwinBase twinBase ?

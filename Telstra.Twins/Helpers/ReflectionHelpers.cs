@@ -13,8 +13,9 @@ namespace Telstra.Twins.Helpers
     {
         public static List<PropertyInfo> GetTwinProperties(this Type t) =>
             t.GetProperties()
-            .Where(p => Attribute.IsDefined(p, typeof(TwinPropertyAttribute))
-                     || Attribute.IsDefined(p, typeof(TwinComponentAttribute)))
+            .Where(p =>
+                (Attribute.IsDefined(p, typeof(TwinPropertyAttribute)) && !Attribute.IsDefined(p, typeof(TwinModelOnlyPropertyAttribute)))
+                || Attribute.IsDefined(p, typeof(TwinComponentAttribute)))
             .ToList();
 
         /// <summary>
