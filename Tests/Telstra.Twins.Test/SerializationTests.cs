@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using FluentAssertions;
 using KellermanSoftware.CompareNetObjects;
@@ -80,19 +81,76 @@ namespace Telstra.Twins.Test
 
 
         [Fact]
-        public void ToBasicTwin_SimpleTwin_Should_Work()
+        public void RefreshContents_SimpleTwin_Should_Work()
         {
-            var basicTwin = DataGenerator.simpleTwin.ToBasicTwin();
+            // arrange
+            var simpleTwin = new SimpleTwin()
+            {
+                Id = "122233",
+                ETag = new Azure.ETag("4444"),
+                Quantity = 1,
+                Measurement = 2
+            };
 
-            basicTwin.Contents.Count.Should().Be(1);
+            // act
+            simpleTwin.RefreshContents();
+
+            // assert
+            simpleTwin.Contents.Count.Should().Be(1);
         }
 
         [Fact]
-        public void ToBasicTwin_TwinWithAllAttributes_Should_Work()
+        public void RefreshContents_TwinWithAllAttributes_Should_Work()
         {
-            var basicTwin = DataGenerator.twinWithAllAttributes.ToBasicTwin();
+            // arrange
+            var twinWithAllAttributes = new TwinWithAllAttributes()
+            {
+                Id = "0",
+                ETag = new Azure.ETag("0"),
+                Property = "property",
+                Flag = true,
+                ComponentTwin = new SimpleTwin() { Quantity = 1, Measurement = 2 },
+                IntArray = new List<int>() { 1, 2, 3 },
+                StringMap = new Dictionary<string, string>()
+                {
+                    {"key","value"}
+                },
+                GuidId = Guid.Parse("b2d1ab5e-d953-4003-85e1-1018a00fe848"),
+                NullableId = null
+            };
 
-            basicTwin.Contents.Count.Should().Be(6);
+            // act
+            twinWithAllAttributes.RefreshContents();
+
+            twinWithAllAttributes.Contents.Count.Should().Be(5);
+        }
+
+        [Fact]
+        public void RefreshContents_TwinWithNestedObject_Should_Work()
+        {
+            // arrange
+            var twinWithNestedObject = new TwinWithNestedObject()
+            {
+                Id = "11111", // model property will be omitted
+                ETag = new Azure.ETag("abcd"), // model property will be omitted
+                NestedObj = new NestedObject()
+                {
+                    Name = "name",
+                    Value = null,
+                    State = State.Inactive
+                },
+                Speed = 50 // telemetry will be omitted
+            };
+
+            // act
+            twinWithNestedObject.RefreshContents();
+
+            // assert
+            twinWithNestedObject.Contents.Count.Should().Be(1);
+            var nestedComponent = twinWithNestedObject.Contents["nestedObj"] as ExpandoObject;
+            nestedComponent.Should().NotBeNull();
+            int count = ((IDictionary<string, object>)nestedComponent!).Count;
+            count.Should().Be(2);
         }
 
         public static IEnumerable<object[]> ModelTestData()

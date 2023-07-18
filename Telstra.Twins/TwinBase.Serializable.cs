@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Dynamic;
 using System.Linq;
 using Azure.DigitalTwins.Core;
 using Telstra.Twins.Attributes;
@@ -180,24 +181,15 @@ namespace Telstra.Twins
             }
         }
 
-        public BasicDigitalTwin ToBasicTwin()
+        public void RefreshContents()
         {
             var properties = this.GetType().GetTwinProperties();
 
-            var basicTwin = new BasicDigitalTwin()
-            {
-                Id = this.Id,
-                Metadata = new DigitalTwinMetadata()
-                {
-                    ModelId = ModelId,
-                },
-                Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
+            Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
                     .ToDictionary(c => c.key,
                         c => c.value is TwinBase twinBase ?
-                            twinBase.ToTwinComponent() : c.value)
-            };
-
-            return basicTwin;
+                            twinBase.ToTwinComponent() : c.value);
+            Contents = CleanupDigitalTwinContents(Contents);
         }
 
         public BasicDigitalTwinComponent ToTwinComponent()
@@ -213,6 +205,40 @@ namespace Telstra.Twins
             };
 
             return basicTwinComponent;
+        }
+
+
+        private IDictionary<string, object> CleanupDigitalTwinContents(IDictionary<string, object> twinDataContents)
+        {
+            _ = twinDataContents ?? throw new ArgumentNullException(nameof(twinDataContents));
+
+            // removing the null values from the list
+            twinDataContents = twinDataContents
+                .Where(x => x.Value is not null)
+                .ToDictionary(x => x.Key, x => x.Value);
+
+            foreach (var kv in twinDataContents
+                .Where(x => x.Value.GetType().IsClass
+                && x.Value.GetType()?.FullName?.StartsWith("System.", StringComparison.InvariantCultureIgnoreCase) == false))
+            {
+                twinDataContents[kv.Key] = RemoveNullPropertiesFromObject(kv.Value);
+            }
+            return twinDataContents;
+        }
+
+        private object RemoveNullPropertiesFromObject(object objectToTransform)
+        {
+            var type = objectToTransform.GetType();
+            var returnClass = new ExpandoObject() as IDictionary<string, object>;
+            foreach (var propertyInfo in type.GetProperties())
+            {
+                var value = propertyInfo.GetValue(objectToTransform);
+                if (value is not null)
+                {
+                    returnClass.Add(propertyInfo.Name.ToCamelCase(), value);
+                }
+            }
+            return returnClass;
         }
     }
 }
