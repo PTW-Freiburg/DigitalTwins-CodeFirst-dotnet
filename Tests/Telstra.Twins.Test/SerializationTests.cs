@@ -93,7 +93,7 @@ namespace Telstra.Twins.Test
             };
 
             // act
-            simpleTwin.RefreshContents();
+            simpleTwin.ToBasicTwin();
 
             // assert
             simpleTwin.Contents.Count.Should().Be(1);
@@ -120,7 +120,7 @@ namespace Telstra.Twins.Test
             };
 
             // act
-            twinWithAllAttributes.RefreshContents();
+            twinWithAllAttributes.ToBasicTwin();
 
             twinWithAllAttributes.Contents.Count.Should().Be(5);
         }
@@ -143,7 +143,7 @@ namespace Telstra.Twins.Test
             };
 
             // act
-            twinWithNestedObject.RefreshContents();
+            twinWithNestedObject.ToBasicTwin();
 
             // assert
             twinWithNestedObject.Contents.Count.Should().Be(1);

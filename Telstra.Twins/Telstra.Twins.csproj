@@ -14,7 +14,7 @@
             DeviceInstancesDB NuGet versions:
             1.1.1
             - BugFix: Fixed the bug, adding twin model only properties to the contents of basic digital twin.
-            - Implemented RefreshContents for BasicTwin
+            - Implemented clean up contents for BasicTwin
 
             1.1.0
             - Breaking change: TwinBase now inherits from BasicDigitalTwins

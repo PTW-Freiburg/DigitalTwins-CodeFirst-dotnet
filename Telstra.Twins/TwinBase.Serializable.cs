@@ -181,15 +181,19 @@ namespace Telstra.Twins
             }
         }
 
-        public void RefreshContents()
+        public BasicDigitalTwin ToBasicTwin()
         {
             var properties = this.GetType().GetTwinProperties();
-
-            Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
-                    .ToDictionary(c => c.key,
+            var basicTwin = new BasicDigitalTwin()
+            {
+                Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
+                .ToDictionary(c => c.key,
                         c => c.value is TwinBase twinBase ?
-                            twinBase.ToTwinComponent() : c.value);
-            Contents = CleanupDigitalTwinContents(Contents);
+                            twinBase.ToTwinComponent() : c.value)
+            };
+
+            basicTwin.Contents = CleanupDigitalTwinContents(basicTwin.Contents);
+            return basicTwin;
         }
 
         public BasicDigitalTwinComponent ToTwinComponent()
@@ -204,6 +208,7 @@ namespace Telstra.Twins
                             twinBase.ToTwinComponent() : c.value)
             };
 
+            basicTwinComponent.Contents = CleanupDigitalTwinContents(basicTwinComponent.Contents);
             return basicTwinComponent;
         }
 
