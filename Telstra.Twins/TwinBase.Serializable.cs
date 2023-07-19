@@ -183,32 +183,40 @@ namespace Telstra.Twins
 
         public BasicDigitalTwin ToBasicTwin()
         {
-            var properties = this.GetType().GetTwinProperties();
-            var basicTwin = new BasicDigitalTwin()
-            {
-                Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
+            var properties = GetType().GetTwinProperties();
+            Contents = Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
                 .ToDictionary(c => c.key,
                         c => c.value is TwinBase twinBase ?
-                            twinBase.ToTwinComponent() : c.value)
+                            twinBase.ToTwinComponent() : c.value);
+
+            Contents = CleanupDigitalTwinContents(Contents);
+
+            var basicTwin = new BasicDigitalTwin()
+            {
+                Id = Id,
+                ETag = ETag,
+                Metadata = Metadata,
+                Contents = Contents
             };
 
-            basicTwin.Contents = CleanupDigitalTwinContents(basicTwin.Contents);
             return basicTwin;
         }
 
         public BasicDigitalTwinComponent ToTwinComponent()
         {
             var properties = this.GetType().GetTwinProperties();
+            Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
+                    .ToDictionary(c => c.key,
+                        c => c.value is TwinBase twinBase ?
+                            twinBase.ToTwinComponent() : c.value);
+
+            Contents = CleanupDigitalTwinContents(Contents);
 
             var basicTwinComponent = new BasicDigitalTwinComponent()
             {
-                Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
-                    .ToDictionary(c => c.key,
-                        c => c.value is TwinBase twinBase ?
-                            twinBase.ToTwinComponent() : c.value)
+                Contents = Contents
             };
 
-            basicTwinComponent.Contents = CleanupDigitalTwinContents(basicTwinComponent.Contents);
             return basicTwinComponent;
         }
 

@@ -120,9 +120,12 @@ namespace Telstra.Twins.Test
             };
 
             // act
-            twinWithAllAttributes.ToBasicTwin();
+            var basicTwin = twinWithAllAttributes.ToBasicTwin();
 
             twinWithAllAttributes.Contents.Count.Should().Be(5);
+            basicTwin.Id.Should().Be(twinWithAllAttributes.Id);
+            basicTwin.ETag.Should().Be(twinWithAllAttributes.ETag);
+            basicTwin.Contents.Count.Should().Be(5);
         }
 
         [Fact]
@@ -143,7 +146,7 @@ namespace Telstra.Twins.Test
             };
 
             // act
-            twinWithNestedObject.ToBasicTwin();
+            var basicTwin = twinWithNestedObject.ToBasicTwin();
 
             // assert
             twinWithNestedObject.Contents.Count.Should().Be(1);
@@ -151,6 +154,15 @@ namespace Telstra.Twins.Test
             nestedComponent.Should().NotBeNull();
             int count = ((IDictionary<string, object>)nestedComponent!).Count;
             count.Should().Be(2);
+
+            basicTwin.Id.Should().Be(twinWithNestedObject.Id);
+            basicTwin.ETag.Should().Be(twinWithNestedObject.ETag);
+
+            basicTwin.Contents.Count.Should().Be(1);
+            var nestedComponent2 = twinWithNestedObject.Contents["nestedObj"] as ExpandoObject;
+            nestedComponent2.Should().NotBeNull();
+            int count2 = ((IDictionary<string, object>)nestedComponent2!).Count;
+            count2.Should().Be(2);
         }
 
         public static IEnumerable<object[]> ModelTestData()
