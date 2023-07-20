@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Dynamic;
 using System.Linq;
-using System.Text.Json.Serialization;
 using Azure.DigitalTwins.Core;
-using Newtonsoft.Json;
 using Telstra.Twins.Attributes;
-using Telstra.Twins.Helpers;
 using Telstra.Twins.Common;
-using Telstra.Twins.Models;
+using Telstra.Twins.Helpers;
 
 namespace Telstra.Twins
 {
-    public abstract partial class TwinBase
+    public abstract partial class TwinBase : BasicDigitalTwin
     {
         private string _modelId;
 
@@ -93,12 +91,12 @@ namespace Telstra.Twins
                 {
                     twinBaseObjects.ToList().ForEach(r =>
                     {
-                        result.Add(new BasicRelationship { SourceId = this.TwinId, TargetId = r.TwinId, Name = relationshipType });
+                        result.Add(new BasicRelationship { SourceId = this.Id, TargetId = r.Id, Name = relationshipType });
                     });
                 }
                 else if (prop is TwinBase twinProp)
                 {
-                    result.Add(new BasicRelationship { SourceId = this.TwinId, TargetId = twinProp.TwinId, Name = relationshipType });
+                    result.Add(new BasicRelationship { SourceId = this.Id, TargetId = twinProp.Id, Name = relationshipType });
                 }
             });
             return result;
@@ -161,24 +159,6 @@ namespace Telstra.Twins
         [TwinModelOnlyProperty("displayName")]
         protected string DisplayName { get; set; }
 
-        [TwinOnlyProperty(DigitalTwinsJsonPropertyNames.DigitalTwinId)]
-        [JsonPropertyName(DigitalTwinsJsonPropertyNames.DigitalTwinId)]
-        [JsonProperty(DigitalTwinsJsonPropertyNames.DigitalTwinId)]
-        public string TwinId { get; set; }
-
-        /// <summary>
-        /// A string representing a weak ETag for the entity that this request performs an operation against, as per RFC7232.
-        /// </summary>
-        [TwinOnlyProperty(DigitalTwinsJsonPropertyNames.DigitalTwinETag)]
-        [JsonPropertyName(DigitalTwinsJsonPropertyNames.DigitalTwinETag)]
-        [JsonProperty(DigitalTwinsJsonPropertyNames.DigitalTwinETag)]
-        public string ETag { get; set; }
-
-        [TwinOnlyProperty(DigitalTwinsJsonPropertyNames.DigitalTwinMetadata)]
-        [JsonPropertyName(DigitalTwinsJsonPropertyNames.DigitalTwinMetadata)]
-        [JsonProperty(DigitalTwinsJsonPropertyNames.DigitalTwinMetadata)]
-        public virtual TwinMetadata Metadata { get; set; } = new TwinMetadata();
-
         private void ReadAttributeInfo()
         {
             var type = this.GetType();
@@ -203,21 +183,20 @@ namespace Telstra.Twins
 
         public BasicDigitalTwin ToBasicTwin()
         {
-            var properties = this.GetType().GetTwinProperties();
+            var properties = GetType().GetTwinProperties();
+            Contents = Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
+                .ToDictionary(c => c.key,
+                        c => c.value is TwinBase twinBase ?
+                            twinBase.ToTwinComponent() : c.value);
+
+            Contents = CleanupDigitalTwinContents(Contents);
 
             var basicTwin = new BasicDigitalTwin()
             {
-                Id = this.TwinId,
-                Metadata = new DigitalTwinMetadata()
-                {
-                    ModelId = ModelId,
-                    PropertyMetadata = properties.Select(p => (key: p.Name, value: new DigitalTwinPropertyMetadata() { LastUpdatedOn = DateTimeOffset.UtcNow }))
-                        .ToDictionary(c => c.key, c => c.value)
-                },
-                Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
-                    .ToDictionary(c => c.key,
-                        c => c.value is TwinBase twinBase ?
-                            twinBase.ToTwinComponent() : c.value)
+                Id = Id,
+                ETag = ETag,
+                Metadata = Metadata,
+                Contents = Contents
             };
 
             return basicTwin;
@@ -226,18 +205,53 @@ namespace Telstra.Twins
         public BasicDigitalTwinComponent ToTwinComponent()
         {
             var properties = this.GetType().GetTwinProperties();
+            Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
+                    .ToDictionary(c => c.key,
+                        c => c.value is TwinBase twinBase ?
+                            twinBase.ToTwinComponent() : c.value);
+
+            Contents = CleanupDigitalTwinContents(Contents);
 
             var basicTwinComponent = new BasicDigitalTwinComponent()
             {
-                Metadata = properties.Select(p => (key: p.Name, value: new DigitalTwinPropertyMetadata() { LastUpdatedOn = DateTimeOffset.UtcNow }))
-                        .ToDictionary(c => c.key, c => c.value),
-                Contents = properties.Select(p => (key: p.Name.ToCamelCase(), value: p.GetValue(this)))
-                    .ToDictionary(c => c.key,
-                        c => c.value is TwinBase twinBase ?
-                            twinBase.ToTwinComponent() : c.value)
+                Contents = Contents
             };
 
             return basicTwinComponent;
+        }
+
+
+        private IDictionary<string, object> CleanupDigitalTwinContents(IDictionary<string, object> twinDataContents)
+        {
+            _ = twinDataContents ?? throw new ArgumentNullException(nameof(twinDataContents));
+
+            // removing the null values from the list
+            twinDataContents = twinDataContents
+                .Where(x => x.Value is not null)
+                .ToDictionary(x => x.Key, x => x.Value);
+
+            foreach (var kv in twinDataContents
+                .Where(x => x.Value.GetType().IsClass
+                && x.Value.GetType()?.FullName?.StartsWith("System.", StringComparison.InvariantCultureIgnoreCase) == false))
+            {
+                twinDataContents[kv.Key] = RemoveNullPropertiesFromObject(kv.Value);
+            }
+            return twinDataContents;
+        }
+
+        private object RemoveNullPropertiesFromObject(object objectToTransform)
+        {
+            var type = objectToTransform.GetType();
+            var returnClass = new ExpandoObject() as IDictionary<string, object>;
+            foreach (var propertyInfo in type.GetProperties())
+            {
+                var value = propertyInfo.GetValue(objectToTransform);
+                if (value is not null)
+                {
+                    returnClass.Add(propertyInfo.Name.ToCamelCase(), value);
+                }
+            }
+            return returnClass;
         }
     }
 }
