@@ -13,6 +13,7 @@ using Telstra.Twins.Helpers;
 
 namespace Telstra.Twins.Serialization
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields", Justification = "<Pending>")]
     public class ObjectToTwinConverter<T> : TwinConverterBase<T>
     {
         public virtual string[] SpecialTwinPropertyNames => new[] { DigitalTwinsJsonPropertyNames.DigitalTwinId, DigitalTwinsJsonPropertyNames.DigitalTwinETag, DigitalTwinsJsonPropertyNames.DigitalTwinMetadata, "@context", "displayName" };
@@ -137,7 +138,7 @@ namespace Telstra.Twins.Serialization
                 var normalTwinProperties =
                     GetNormalTwinProperties(SpecialTwinPropertyNames);
 
-                var allTwinProperties = specialTwinProperties.Union(normalTwinProperties); //new List<PropertyInfo>(specialTwinProperties);
+                var allTwinProperties = specialTwinProperties.Union(normalTwinProperties);
                 allTwinProperties = allTwinProperties.Union(GetComponentTwinProperties());
                 var propMap = allTwinProperties
                     .ToDictionary(
