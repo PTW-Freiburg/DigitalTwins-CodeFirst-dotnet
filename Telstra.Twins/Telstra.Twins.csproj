@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <RootNamespace>Telstra.Twins</RootNamespace>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-        <Version>1.1.1</Version>
+        <Version>1.2.0</Version>
         <Authors>Telstra ADT Team, P6.6 Owners</Authors>
         <Company>Telstra, PTW-Freiburg</Company>
         <Description>Telstra Digital Twins Core</Description>
@@ -12,6 +12,9 @@
         <Product>P6_6_1_Telstra.Twins</Product>
         <PackageReleaseNotes>
             DeviceInstancesDB NuGet versions:
+            1.2.0
+            - feat: upgrade to net8.0
+            
             1.1.1
             - BugFix: Fixed the bug, adding twin model only properties to the contents of basic digital twin.
             - Implemented clean up contents for BasicTwin
@@ -61,5 +64,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Telstra.Twins.Common\Telstra.Twins.Common.csproj" />
     </ItemGroup>
-
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
 </Project>

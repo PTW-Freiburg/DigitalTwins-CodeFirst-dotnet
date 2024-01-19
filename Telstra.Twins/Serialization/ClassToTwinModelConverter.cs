@@ -9,6 +9,7 @@ using Telstra.Twins.Services;
 
 namespace Telstra.Twins.Serialization
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields", Justification = "<Pending>")]
     public class ClassToTwinModelConverter<T> : TwinConverterBase<T>
     {
         public string[] SpecialModelPropertyNames { get; } = { "@id", "@type", "extends", "@context", "displayName" };
@@ -29,7 +30,7 @@ namespace Telstra.Twins.Serialization
                 specialModelProperties.Insert(0, new KeyValuePair<string, object>("@id", typeof(T).GetDigitalTwinModelId()));
             }
 
-            if (!specialModelProperties.Any(pair => pair.Key == "extends" && pair.Value != null))
+            if (!specialModelProperties.Exists(pair => pair.Key == "extends" && pair.Value != null))
             {
                 specialModelProperties.RemoveAll(pair => pair.Key == "extends");
                 var insertIndex = specialModelProperties.Count > 2 ? 2 : 0;

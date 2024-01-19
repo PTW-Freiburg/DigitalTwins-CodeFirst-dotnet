@@ -45,6 +45,8 @@ namespace Telstra.Twins.Test
         public void ShouldSerialiseModelToDTDLCustomized(Type type)
         {
             var model = Serializer.SerializeModel(type);
+            model.Should().NotBeNull();
+
             if (!Directory.Exists("DTDL Models"))
             {
                 Directory.CreateDirectory("DTDL Models");
@@ -58,13 +60,11 @@ namespace Telstra.Twins.Test
             var model = typeof(Building).GetModelRelationships();
             var moelRel = ModelRelationship.Create(model[0]);
             Assert.Equal("contains", moelRel.Name);
-
-            var modelLibrary = new ModelLibrary();
         }
 
         [Theory]
         [MemberData(nameof(TwinTestData))]
-        public void ShouldSerialiseTwinToDTDL(string twinDTDL, object twinObject)
+        public void ShouldSerializeTwinToDTDL(string twinDTDL, object twinObject)
         {
             var expectedDTDL = Serializer.SerializeTwin(twinObject);
             JsonAssert.Equal(twinDTDL, expectedDTDL);
